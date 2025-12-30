@@ -154,6 +154,7 @@ def main():
         save_options = config['saveOptions']
         paths = config['paths']
         proxy = config.get('proxy')
+        request_interval = config.get('requestInterval')
 
         # 设置代理
         proxies = None
@@ -179,6 +180,7 @@ def main():
             notes = params.get('notes', [])
             save_choice = save_options['mode']
             excel_name = save_options.get('excelName', '笔记数据')
+            download = save_options.get('download', True)  # 新增：是否下载媒体文件，默认True
 
             output_json({
                 "type": "progress",
@@ -193,14 +195,18 @@ def main():
                 base_path=paths,
                 save_choice=save_choice,
                 excel_name=excel_name,
-                proxies=proxies
+                download=download,  # 新增：传递download参数
+                proxies=proxies,
+                request_interval=request_interval
             )
 
         elif task_type == 'user':
             # 爬取用户所有笔记
             user_url = params.get('userUrl', '')
+            existing_note_ids = params.get('existingNoteIds', [])
             save_choice = save_options['mode']
             excel_name = save_options.get('excelName', '用户笔记')
+            download = save_options.get('download', True)  # 新增：是否下载媒体文件，默认True
 
             output_json({
                 "type": "log",
@@ -208,30 +214,47 @@ def main():
                 "message": f"开始爬取用户: {user_url}"
             })
 
-            note_list, api_success, api_msg = spider.spider_user_all_note(
-                user_url=user_url,
-                cookies_str=cookie,
-                base_path=paths,
-                save_choice=save_choice,
-                excel_name=excel_name,
-                proxies=proxies
-            )
+            try:
+                note_list, api_success, api_msg, user_profile, total_note_count = spider.spider_user_all_note(
+                    user_url=user_url,
+                    cookies_str=cookie,
+                    base_path=paths,
+                    save_choice=save_choice,
+                    excel_name=excel_name,
+                    download=download,  # 新增：传递download参数
+                    proxies=proxies,
+                    request_interval=request_interval,
+                    existing_note_ids=existing_note_ids
+                )
+            except Exception as e:
+                api_success = False
+                api_msg = str(e)
+                note_list = []
+                user_profile = None
+                total_note_count = 0
+                output_json({
+                    "type": "log",
+                    "level": "ERROR",
+                    "message": f"爬取用户异常，已跳过当前博主: {api_msg}"
+                })
 
             output_json({
                 "type": "progress",
                 "current": len(note_list),
-                "total": len(note_list),
-                "message": f"用户共有 {len(note_list)} 条笔记"
+                "total": total_note_count,
+                "message": f"用户共有 {total_note_count} 条笔记"
             })
 
             # 输出完成信号，包含count和API返回的消息
             output_json({
                 "type": "done",
                 "success": True,
-                "count": len(note_list),
+                "count": total_note_count,
                 "api_success": api_success,
                 "api_message": api_msg,
-                "message": "任务完成"
+                "notes": note_list,
+                "message": "任务完成",
+                "user_info": user_profile
             })
 
         elif task_type == 'search':
@@ -246,6 +269,7 @@ def main():
             geo = params.get('geo')
             save_choice = save_options['mode']
             excel_name = save_options.get('excelName', f'{query}_搜索结果')
+            download = save_options.get('download', True)  # 新增：是否下载媒体文件，默认True
 
             output_json({
                 "type": "log",
@@ -266,7 +290,9 @@ def main():
                 pos_distance=pos_distance,
                 geo=geo,
                 excel_name=excel_name,
-                proxies=proxies
+                download=download,  # 新增：传递download参数
+                proxies=proxies,
+                request_interval=request_interval
             )
 
             # 输出完成信号，包含count和API返回的消息

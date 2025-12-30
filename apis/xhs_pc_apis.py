@@ -10,15 +10,45 @@ from loguru import logger
     获小红书的api
     :param cookies_str: 你的cookies
 """
+import time
+import random
+
 class XHS_Apis():
     def __init__(self):
         self.base_url = "https://edith.xiaohongshu.com"
+        self.request_interval = None
+        self.request_timeout = 15
+        
+    def set_request_interval(self, request_interval):
+        """
+        设置请求间隔配置
+        :param request_interval: 包含min和max的字典
+        """
+        self.request_interval = request_interval
+        
+    def _random_delay(self):
+        """
+        根据配置的请求间隔生成随机延迟
+        """
+        if self.request_interval:
+            min_delay = self.request_interval.get('min', 1)
+            max_delay = self.request_interval.get('max', 3)
+            delay = random.uniform(min_delay, max_delay)
+            logger.debug(f"随机延迟 {delay:.2f} 秒")
+            time.sleep(delay)
 
-    def get_homefeed_all_channel(self, cookies_str: str, proxies: dict = None):
+    def get_homefeed_all_channel(self, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取主页的所有频道
             返回主页的所有频道
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = "/api/sns/web/v1/homefeed/category"
@@ -31,7 +61,7 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_homefeed_recommend(self, category, cursor_score, refresh_type, note_index, cookies_str: str, proxies: dict = None):
+    def get_homefeed_recommend(self, category, cursor_score, refresh_type, note_index, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取主页推荐的笔记
             :param category: 你想要获取的频道
@@ -39,8 +69,16 @@ class XHS_Apis():
             :param refresh_type: 你想要获取的笔记的刷新类型
             :param note_index: 你想要获取的笔记的index
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回主页推荐的笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = f"/api/sns/web/v1/homefeed"
@@ -71,19 +109,27 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_homefeed_recommend_by_num(self, category, require_num, cookies_str: str, proxies: dict = None):
+    def get_homefeed_recommend_by_num(self, category, require_num, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             根据数量获取主页推荐的笔记
             :param category: 你想要获取的频道
             :param require_num: 你想要获取的笔记的数量
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             根据数量返回主页推荐的笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         cursor_score, refresh_type, note_index = "", 1, 0
         note_list = []
         try:
             while True:
-                success, msg, res_json = self.get_homefeed_recommend(category, cursor_score, refresh_type, note_index, cookies_str, proxies)
+                # 请求前延迟
+                self._random_delay()
+                
+                success, msg, res_json = self.get_homefeed_recommend(category, cursor_score, refresh_type, note_index, cookies_str, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 if "items" not in res_json["data"]:
@@ -102,13 +148,21 @@ class XHS_Apis():
             note_list = note_list[:require_num]
         return success, msg, note_list
 
-    def get_user_info(self, user_id: str, cookies_str: str, proxies: dict = None):
+    def get_user_info(self, user_id: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取用户的信息
             :param user_id: 你想要获取的用户的id
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户的信息
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = f"/api/sns/web/v1/user/otherinfo"
@@ -125,12 +179,20 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_user_self_info(self, cookies_str: str, proxies: dict = None):
+    def get_user_self_info(self, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取用户自己的信息1
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户自己的信息1
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = f"/api/sns/web/v1/user/selfinfo"
@@ -144,12 +206,20 @@ class XHS_Apis():
         return success, msg, res_json
 
 
-    def get_user_self_info2(self, cookies_str: str, proxies: dict = None):
+    def get_user_self_info2(self, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取用户自己的信息2
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户自己的信息2
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = f"/api/sns/web/v2/user/me"
@@ -162,17 +232,32 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_user_note_info(self, user_id: str, cursor: str, cookies_str: str, xsec_token='', xsec_source='', proxies: dict = None):
+    def get_user_note_info(self, user_id: str, cursor: str, cookies_str: str, xsec_token='', xsec_source='', proxies: dict = None, request_interval=None, skip_delay: bool = False):
         """
             获取用户指定位置的笔记
             :param user_id: 你想要获取的用户的id
             :param cursor: 你想要获取的笔记的cursor
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户指定位置的笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        if skip_delay:
+            logger.debug("get_user_note_info， 开始获取用户指定位置笔记：首次请求跳过随机延迟")
+        else:
+            self._random_delay()
+        
         res_json = None
         try:
-            api = f"/api/sns/web/v1/user_posted"
+            # 注意：对于GET请求，我们需要将参数分开处理
+            # api是基础路径，不包含查询参数
+            api = "/api/sns/web/v1/user_posted"
+            
+            # 构建查询参数
             params = {
                 "num": "30",
                 "cursor": cursor,
@@ -181,9 +266,32 @@ class XHS_Apis():
                 "xsec_token": xsec_token,
                 "xsec_source": xsec_source,
             }
-            splice_api = splice_str(api, params)
-            headers, cookies, data = generate_request_params(cookies_str, splice_api, '', 'GET')
-            response = requests.get(self.base_url + splice_api, headers=headers, cookies=cookies, proxies=proxies)
+            
+            # 对参数进行URL编码，确保与签名一致
+            safe_params = {key: ('' if value is None else value) for key, value in params.items()}
+            encoded_query = urllib.parse.urlencode(safe_params)
+            splice_api = f"{api}?{encoded_query}"
+            request_url = f"{self.base_url}{splice_api}"
+            
+            # 生成请求参数，明确指定GET方法
+            headers, cookies, _ = generate_request_params(cookies_str, splice_api, '', 'GET')
+            
+            # 发送GET请求，直接使用手动构建的URL，避免重复编码
+            response = requests.get(
+                request_url,
+                headers=headers,
+                cookies=cookies,
+                proxies=proxies,
+                timeout=self.request_timeout
+            )
+            
+            # 打印完整的请求URL，用于调试
+            logger.debug(f"完整请求URL: {request_url}")
+            
+            # 检查响应状态码
+            logger.debug(f"响应状态码: {response.status_code}")
+            logger.debug(f"响应文本: {response.text}")
+            
             res_json = response.json()
 
             # Debug: Log complete API response
@@ -205,32 +313,76 @@ class XHS_Apis():
         return success, msg, res_json
 
 
-    def get_user_all_notes(self, user_url: str, cookies_str: str, proxies: dict = None):
+    def get_user_all_notes(self, user_url: str, cookies_str: str, proxies: dict = None, request_interval=None, existing_note_ids=None):
         """
            获取用户所有笔记
            :param user_id: 你想要获取的用户的id
            :param cookies_str: 你的cookies
+           :param request_interval: 请求间隔配置
+           :param existing_note_ids: 已存在的笔记ID集合，用于检测重复数据
            返回用户的所有笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         cursor = ''
         note_list = []
+        # 确保existing_note_ids是集合类型
+        existing_note_ids = set(existing_note_ids) if existing_note_ids else set()
+        
         try:
             urlParse = urllib.parse.urlparse(user_url)
-            user_id = urlParse.path.split("/")[-1]
+            path_parts = urlParse.path.split("/")
+            # 确保我们获取的是用户profile后的ID
+            # 路径格式：/user/profile/{user_id}
+            if len(path_parts) >= 4 and path_parts[-2] == 'profile':
+                user_id = path_parts[-1]
+            else:
+                # 回退到原来的解析方式
+                user_id = urlParse.path.split("/")[-1]
+            
             kvs = urlParse.query.split('&')
             kvDist = {kv.split('=')[0]: kv.split('=')[1] for kv in kvs}
             xsec_token = kvDist['xsec_token'] if 'xsec_token' in kvDist else ""
             xsec_source = kvDist['xsec_source'] if 'xsec_source' in kvDist else "pc_search"
+            
+            logger.info(f"解析到的用户ID: {user_id}")
+            logger.info(f"使用的xsec_token: {xsec_token}")
+            logger.info(f"使用的xsec_source: {xsec_source}")
+            is_first_request = True
             while True:
-                success, msg, res_json = self.get_user_note_info(user_id, cursor, cookies_str, xsec_token, xsec_source, proxies)
+                success, msg, res_json = self.get_user_note_info(
+                    user_id,
+                    cursor,
+                    cookies_str,
+                    xsec_token,
+                    xsec_source,
+                    proxies,
+                    request_interval,
+                    skip_delay=is_first_request
+                )
+                is_first_request = False
                 if not success:
                     raise Exception(msg)
                 notes = res_json["data"]["notes"]
+                
                 if 'cursor' in res_json["data"]:
                     cursor = str(res_json["data"]["cursor"])
                 else:
                     break
-                note_list.extend(notes)
+                
+                new_notes = []
+                for note in notes:
+                    note_id = str(note['note_id'])
+                    if note_id in existing_note_ids:
+                        logger.info(f'检测到重复笔记 {note_id}，跳过详情获取')
+                        continue
+                    new_notes.append(note)
+                    existing_note_ids.add(note_id)
+
+                note_list.extend(new_notes)
+                
                 if len(notes) == 0 or not res_json["data"]["has_more"]:
                     break
         except Exception as e:
@@ -238,14 +390,22 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, note_list
 
-    def get_user_like_note_info(self, user_id: str, cursor: str, cookies_str: str, xsec_token='', xsec_source='', proxies: dict = None):
+    def get_user_like_note_info(self, user_id: str, cursor: str, cookies_str: str, xsec_token='', xsec_source='', proxies: dict = None, request_interval=None):
         """
             获取用户指定位置喜欢的笔记
             :param user_id: 你想要获取的用户的id
             :param cursor: 你想要获取的笔记的cursor
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户指定位置喜欢的笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = f"/api/sns/web/v1/note/like/page"
@@ -267,13 +427,18 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_user_all_like_note_info(self, user_url: str, cookies_str: str, proxies: dict = None):
+    def get_user_all_like_note_info(self, user_url: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取用户所有喜欢笔记
             :param user_id: 你想要获取的用户的id
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户的所有喜欢笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         cursor = ''
         note_list = []
         try:
@@ -284,8 +449,11 @@ class XHS_Apis():
             xsec_token = kvDist['xsec_token'] if 'xsec_token' in kvDist else ""
             xsec_source = kvDist['xsec_source'] if 'xsec_source' in kvDist else "pc_user"
             while True:
+                # 请求前延迟
+                self._random_delay()
+                
                 success, msg, res_json = self.get_user_like_note_info(user_id, cursor, cookies_str, xsec_token,
-                                                                      xsec_source, proxies)
+                                                                      xsec_source, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 notes = res_json["data"]["notes"]
@@ -301,14 +469,22 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, note_list
 
-    def get_user_collect_note_info(self, user_id: str, cursor: str, cookies_str: str, xsec_token='', xsec_source='', proxies: dict = None):
+    def get_user_collect_note_info(self, user_id: str, cursor: str, cookies_str: str, xsec_token='', xsec_source='', proxies: dict = None, request_interval=None):
         """
             获取用户指定位置收藏的笔记
             :param user_id: 你想要获取的用户的id
             :param cursor: 你想要获取的笔记的cursor
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户指定位置收藏的笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = f"/api/sns/web/v2/note/collect/page"
@@ -330,13 +506,18 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_user_all_collect_note_info(self, user_url: str, cookies_str: str, proxies: dict = None):
+    def get_user_all_collect_note_info(self, user_url: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取用户所有收藏笔记
             :param user_id: 你想要获取的用户的id
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回用户的所有收藏笔记
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         cursor = ''
         note_list = []
         try:
@@ -347,8 +528,11 @@ class XHS_Apis():
             xsec_token = kvDist['xsec_token'] if 'xsec_token' in kvDist else ""
             xsec_source = kvDist['xsec_source'] if 'xsec_source' in kvDist else "pc_search"
             while True:
+                # 请求前延迟
+                self._random_delay()
+                
                 success, msg, res_json = self.get_user_collect_note_info(user_id, cursor, cookies_str, xsec_token,
-                                                                         xsec_source, proxies)
+                                                                         xsec_source, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 notes = res_json["data"]["notes"]
@@ -364,14 +548,22 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, note_list
 
-    def get_note_info(self, url: str, cookies_str: str, proxies: dict = None):
+    def get_note_info(self, url: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取笔记的详细
             :param url: 你想要获取的笔记的url
             :param cookies_str: 你的cookies
             :param xsec_source: 你的xsec_source 默认为pc_search pc_user pc_feed
+            :param request_interval: 请求间隔配置
             返回笔记的详细
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             urlParse = urllib.parse.urlparse(url)
@@ -393,7 +585,14 @@ class XHS_Apis():
                 "xsec_token": kvDist['xsec_token']
             }
             headers, cookies, data = generate_request_params(cookies_str, api, data, 'POST')
-            response = requests.post(self.base_url + api, headers=headers, data=data, cookies=cookies, proxies=proxies)
+            response = requests.post(
+                self.base_url + api,
+                headers=headers,
+                data=data,
+                cookies=cookies,
+                proxies=proxies,
+                timeout=self.request_timeout
+            )
             res_json = response.json()
             success, msg = res_json["success"], res_json["msg"]
         except Exception as e:
@@ -402,13 +601,21 @@ class XHS_Apis():
         return success, msg, res_json
 
 
-    def get_search_keyword(self, word: str, cookies_str: str, proxies: dict = None):
+    def get_search_keyword(self, word: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取搜索关键词
             :param word: 你的关键词
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回搜索关键词
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = "/api/sns/web/v1/search/recommend"
@@ -425,7 +632,7 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def search_note(self, query: str, cookies_str: str, page=1, sort_type_choice=0, note_type=0, note_time=0, note_range=0, pos_distance=0, geo="", proxies: dict = None):
+    def search_note(self, query: str, cookies_str: str, page=1, sort_type_choice=0, note_type=0, note_time=0, note_range=0, pos_distance=0, geo="", proxies: dict = None, request_interval=None):
         """
             获取搜索笔记的结果
             :param query 搜索的关键词
@@ -436,8 +643,16 @@ class XHS_Apis():
             :param note_time 笔记时间 0 不限, 1 一天内, 2 一周内天, 3 半年内
             :param note_range 笔记范围 0 不限, 1 已看过, 2 未看过, 3 已关注
             :param pos_distance 位置距离 0 不限, 1 同城, 2 附近 指定这个必须要指定 geo
+            :param request_interval 请求间隔配置
             返回搜索的结果
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         sort_type = "general"
         if sort_type_choice == 1:
@@ -545,7 +760,7 @@ class XHS_Apis():
             logger.error(f"Error in search_note: {str(e)}")
         return success, msg, res_json
 
-    def search_some_note(self, query: str, require_num: int, cookies_str: str, sort_type_choice=0, note_type=0, note_time=0, note_range=0, pos_distance=0, geo="", proxies: dict = None):
+    def search_some_note(self, query: str, require_num: int, cookies_str: str, sort_type_choice=0, note_type=0, note_time=0, note_range=0, pos_distance=0, geo="", proxies: dict = None, request_interval=None):
         """
             指定数量搜索笔记，设置排序方式和笔记类型和笔记数量
             :param query 搜索的关键词
@@ -557,13 +772,21 @@ class XHS_Apis():
             :param note_range 笔记范围 0 不限, 1 已看过, 2 未看过, 3 已关注
             :param pos_distance 位置距离 0 不限, 1 同城, 2 附近 指定这个必须要指定 geo
             :param geo: 定位信息 经纬度
+            :param request_interval: 请求间隔配置
             返回搜索的结果
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         page = 1
         note_list = []
         try:
             while True:
-                success, msg, res_json = self.search_note(query, cookies_str, page, sort_type_choice, note_type, note_time, note_range, pos_distance, geo, proxies)
+                # 请求前延迟
+                self._random_delay()
+                
+                success, msg, res_json = self.search_note(query, cookies_str, page, sort_type_choice, note_type, note_time, note_range, pos_distance, geo, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 if "items" not in res_json["data"]:
@@ -580,14 +803,22 @@ class XHS_Apis():
             note_list = note_list[:require_num]
         return success, msg, note_list
 
-    def search_user(self, query: str, cookies_str: str, page=1, proxies: dict = None):
+    def search_user(self, query: str, cookies_str: str, page=1, proxies: dict = None, request_interval=None):
         """
             获取搜索用户的结果
             :param query 搜索的关键词
             :param cookies_str 你的cookies
             :param page 搜索的页数
+            :param request_interval: 请求间隔配置
             返回搜索的结果
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = "/api/sns/web/v1/search/usersearch"
@@ -610,19 +841,27 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def search_some_user(self, query: str, require_num: int, cookies_str: str, proxies: dict = None):
+    def search_some_user(self, query: str, require_num: int, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             指定数量搜索用户
             :param query 搜索的关键词
             :param require_num 搜索的数量
             :param cookies_str 你的cookies
+            :param request_interval: 请求间隔配置
             返回搜索的结果
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         page = 1
         user_list = []
         try:
             while True:
-                success, msg, res_json = self.search_user(query, cookies_str, page, proxies)
+                # 请求前延迟
+                self._random_delay()
+                
+                success, msg, res_json = self.search_user(query, cookies_str, page, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 if "users" not in res_json["data"]:
@@ -639,14 +878,22 @@ class XHS_Apis():
             user_list = user_list[:require_num]
         return success, msg, user_list
 
-    def get_note_out_comment(self, note_id: str, cursor: str, xsec_token: str, cookies_str: str, proxies: dict = None):
+    def get_note_out_comment(self, note_id: str, cursor: str, xsec_token: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取指定位置的笔记一级评论
             :param note_id 笔记的id
             :param cursor 指定位置的评论的cursor
             :param cookies_str 你的cookies
+            :param request_interval: 请求间隔配置
             返回指定位置的笔记一级评论
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = "/api/sns/web/v2/comment/page"
@@ -667,18 +914,26 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_note_all_out_comment(self, note_id: str, xsec_token: str, cookies_str: str, proxies: dict = None):
+    def get_note_all_out_comment(self, note_id: str, xsec_token: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取笔记的全部一级评论
             :param note_id 笔记的id
             :param cookies_str 你的cookies
+            :param request_interval: 请求间隔配置
             返回笔记的全部一级评论
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         cursor = ''
         note_out_comment_list = []
         try:
             while True:
-                success, msg, res_json = self.get_note_out_comment(note_id, cursor, xsec_token, cookies_str, proxies)
+                # 请求前延迟
+                self._random_delay()
+                
+                success, msg, res_json = self.get_note_out_comment(note_id, cursor, xsec_token, cookies_str, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 comments = res_json["data"]["comments"]
@@ -694,14 +949,22 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, note_out_comment_list
 
-    def get_note_inner_comment(self, comment: dict, cursor: str, xsec_token: str, cookies_str: str, proxies: dict = None):
+    def get_note_inner_comment(self, comment: dict, cursor: str, xsec_token: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取指定位置的笔记二级评论
             :param comment 笔记的一级评论
             :param cursor 指定位置的评论的cursor
             :param cookies_str 你的cookies
+            :param request_interval: 请求间隔配置
             返回指定位置的笔记二级评论
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
+        # 请求前延迟
+        self._random_delay()
+        
         res_json = None
         try:
             api = "/api/sns/web/v2/comment/sub/page"
@@ -724,20 +987,28 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, res_json
 
-    def get_note_all_inner_comment(self, comment: dict, xsec_token: str, cookies_str: str, proxies: dict = None):
+    def get_note_all_inner_comment(self, comment: dict, xsec_token: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取笔记的全部二级评论
             :param comment 笔记的一级评论
             :param cookies_str 你的cookies
+            :param request_interval: 请求间隔配置
             返回笔记的全部二级评论
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         try:
             if not comment['sub_comment_has_more']:
                 return True, 'success', comment
             cursor = comment['sub_comment_cursor']
             inner_comment_list = []
             while True:
-                success, msg, res_json = self.get_note_inner_comment(comment, cursor, xsec_token, cookies_str, proxies)
+                # 请求前延迟
+                self._random_delay()
+                
+                success, msg, res_json = self.get_note_inner_comment(comment, cursor, xsec_token, cookies_str, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
                 comments = res_json["data"]["comments"]
@@ -754,24 +1025,33 @@ class XHS_Apis():
             msg = str(e)
         return success, msg, comment
 
-    def get_note_all_comment(self, url: str, cookies_str: str, proxies: dict = None):
+    def get_note_all_comment(self, url: str, cookies_str: str, proxies: dict = None, request_interval=None):
         """
             获取一篇文章的所有评论
             :param note_id: 你想要获取的笔记的id
             :param cookies_str: 你的cookies
+            :param request_interval: 请求间隔配置
             返回一篇文章的所有评论
         """
+        # 设置请求间隔
+        if request_interval:
+            self.set_request_interval(request_interval)
+            
         out_comment_list = []
         try:
             urlParse = urllib.parse.urlparse(url)
             note_id = urlParse.path.split("/")[-1]
             kvs = urlParse.query.split('&')
             kvDist = {kv.split('=')[0]: kv.split('=')[1] for kv in kvs}
-            success, msg, out_comment_list = self.get_note_all_out_comment(note_id, kvDist['xsec_token'], cookies_str, proxies)
+            # 请求前延迟
+            self._random_delay()
+            success, msg, out_comment_list = self.get_note_all_out_comment(note_id, kvDist['xsec_token'], cookies_str, proxies, request_interval)
             if not success:
                 raise Exception(msg)
             for comment in out_comment_list:
-                success, msg, new_comment = self.get_note_all_inner_comment(comment, kvDist['xsec_token'], cookies_str, proxies)
+                # 请求前延迟
+                self._random_delay()
+                success, msg, new_comment = self.get_note_all_inner_comment(comment, kvDist['xsec_token'], cookies_str, proxies, request_interval)
                 if not success:
                     raise Exception(msg)
         except Exception as e:
@@ -1038,7 +1318,3 @@ if __name__ == '__main__':
     note_url = r'https://www.xiaohongshu.com/explore/67d7c713000000000900e391?xsec_token=AB1ACxbo5cevHxV_bWibTmK8R1DDz0NnAW1PbFZLABXtE=&xsec_source=pc_user'
     success, msg, note_all_comment = xhs_apis.get_note_all_comment(note_url, cookies_str)
     logger.info(f'获取笔记评论结果 {json.dumps(note_all_comment, ensure_ascii=False)}: {success}, msg: {msg}')
-
-
-
-

@@ -110,6 +110,8 @@ def handle_note_info(data):
         ip_location = data['note_card']['ip_location']
     else:
         ip_location = '未知'
+    # 添加爬取时间
+    crawl_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     return {
         'note_id': note_id,
         'note_url': note_url,
@@ -130,6 +132,7 @@ def handle_note_info(data):
         'tags': tags,
         'upload_time': upload_time,
         'ip_location': ip_location,
+        'crawl_time': crawl_time,
     }
 
 def handle_comment_info(data):
@@ -175,26 +178,78 @@ def handle_comment_info(data):
         'ip_location': ip_location,
         'pictures': pictures,
     }
-def save_to_xlsx(datas, file_path, type='note'):
+def save_to_xlsx(datas, file_path, type='note', sheet_name=None, user_info=None, existing_workbook=None):
+    """
+    保存数据到Excel文件，支持多工作表和追加模式
+    :param datas: 要保存的数据列表
+    :param file_path: 保存路径
+    :param type: 数据类型 (note/user/comment)
+    :param sheet_name: 工作表名称，如果为None则使用默认名称
+    :param user_info: 用户信息，用于添加到主工作表
+    :param existing_workbook: 已存在的工作簿，用于追加数据
+    :return: 返回工作簿对象，便于后续添加更多工作表
+    """
     # Ensure directory exists
     dir_path = os.path.dirname(file_path)
     if dir_path and not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
+    # 如果提供了existing_workbook，则使用它，否则创建新工作簿
+    if existing_workbook:
+        wb = existing_workbook
+    else:
+        wb = openpyxl.Workbook()
+        # 默认工作表用于存放所有博主信息
+        ws = wb.active
+        ws.title = "博主信息"
+        # 添加博主信息表头
+        user_headers = ['用户id', '用户主页url', '用户名', '头像url', '小红书号', '性别', 'ip地址', '介绍', '关注数量', '粉丝数量', '作品被赞和收藏数量', '标签']
+        ws.append(user_headers)
+
+    # 根据类型设置表头
     if type == 'note':
-        headers = ['笔记id', '笔记url', '笔记类型', '用户id', '用户主页url', '昵称', '头像url', '标题', '描述', '点赞数量', '收藏数量', '评论数量', '分享数量', '视频封面url', '视频地址url', '图片地址url列表', '标签', '上传时间', 'ip归属地']
+        headers = ['笔记id', '笔记url', '笔记类型', '用户id', '用户主页url', '昵称', '头像url', '标题', '描述', '点赞数量', '收藏数量', '评论数量', '分享数量', '视频封面url', '视频地址url', '图片地址url列表', '标签', '上传时间', 'ip归属地', '爬取时间']
     elif type == 'user':
         headers = ['用户id', '用户主页url', '用户名', '头像url', '小红书号', '性别', 'ip地址', '介绍', '关注数量', '粉丝数量', '作品被赞和收藏数量', '标签']
     else:
         headers = ['笔记id', '笔记url', '评论id', '用户id', '用户主页url', '昵称', '头像url', '评论内容', '评论标签', '点赞数量', '上传时间', 'ip归属地', '图片地址url列表']
-    ws.append(headers)
-    for data in datas:
-        data = {k: norm_text(str(v)) for k, v in data.items()}
-        ws.append(list(data.values()))
+
+    # 如果是博主信息，添加到主工作表
+    if user_info and type == 'user':
+        ws_main = wb["博主信息"]
+        # 检查是否已存在该用户
+        user_exists = False
+        for row in ws_main.iter_rows(min_row=2, values_only=True):
+            if row and row[0] == user_info['user_id']:
+                user_exists = True
+                break
+        if not user_exists:
+            user_data = {k: norm_text(str(v)) for k, v in user_info.items()}
+            ws_main.append(list(user_data.values()))
+    # 否则，创建或获取对应的工作表并添加数据
+    elif datas:
+        # 使用提供的sheet_name或默认名称
+        actual_sheet_name = sheet_name or ("笔记数据" if type == 'note' else "评论数据")
+        
+        # 检查工作表是否已存在
+        if actual_sheet_name in wb.sheetnames:
+            ws = wb[actual_sheet_name]
+            # 工作表已存在，直接添加数据（跳过表头）
+            for data in datas:
+                data = {k: norm_text(str(v)) for k, v in data.items()}
+                ws.append(list(data.values()))
+        else:
+            # 创建新工作表
+            ws = wb.create_sheet(title=actual_sheet_name)
+            ws.append(headers)
+            for data in datas:
+                data = {k: norm_text(str(v)) for k, v in data.items()}
+                ws.append(list(data.values()))
+
+    # 保存文件
     wb.save(file_path)
     logger.info(f'数据保存至 {file_path}')
+    return wb
 
 def download_media(path, name, url, type):
     if type == 'image':
