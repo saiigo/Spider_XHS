@@ -133,6 +133,7 @@ def handle_note_info(data):
         'upload_time': upload_time,
         'ip_location': ip_location,
         'crawl_time': crawl_time,
+        'crawl_status': '✅',
     }
 
 def handle_comment_info(data):

@@ -204,6 +204,7 @@ def main():
             # 爬取用户所有笔记
             user_url = params.get('userUrl', '')
             existing_note_ids = params.get('existingNoteIds', [])
+            retry_note_urls = params.get('retryNoteUrls', [])
             save_choice = save_options['mode']
             excel_name = save_options.get('excelName', '用户笔记')
             download = save_options.get('download', True)  # 新增：是否下载媒体文件，默认True
@@ -224,7 +225,8 @@ def main():
                     download=download,  # 新增：传递download参数
                     proxies=proxies,
                     request_interval=request_interval,
-                    existing_note_ids=existing_note_ids
+                    existing_note_ids=existing_note_ids,
+                    retry_note_urls=retry_note_urls
                 )
             except Exception as e:
                 api_success = False

@@ -15,6 +15,7 @@ class Data_Spider():
         self.failed_note_count = 0
         self.retry_round = 0
         self.stop_user_task = False
+        self.crawled_note_count = 0
 
     def _format_simple_note_info(self, note_info: dict, note_url: str):
         if not isinstance(note_info, dict):
@@ -86,6 +87,7 @@ class Data_Spider():
             'upload_time': upload_time,
             'ip_location': note_info.get('ip_location', ''),
             'crawl_time': crawl_time,
+            'crawl_status': '基础信息',
         }
 
     def spider_note(self, note_url: str, cookies_str: str, proxies=None, request_interval=None):
@@ -102,6 +104,7 @@ class Data_Spider():
                 note_info = note_info['data']['items'][0]
                 note_info['url'] = note_url
                 note_info = handle_note_info(note_info)
+                note_info['crawl_status'] = '✅'
             else:
                 success = False
                 msg = 'items' if success else msg
@@ -122,10 +125,37 @@ class Data_Spider():
         if save_choice in ['all', 'excel'] and excel_name == '':
             raise ValueError('excel_name 不能为空')
         note_list = []
-        for note_url in notes:
+        
+        # 添加每100条笔记等待的逻辑
+        for i, note_url in enumerate(notes):
             if self.stop_user_task:
                 break
-            success, msg, note_info = self.spider_note(note_url, cookies_str, proxies, request_interval)
+            
+            self.crawled_note_count += 1
+            # 每爬取100条笔记后，等待60-70秒随机时间
+            if self.crawled_note_count % 100 == 0:
+                wait_seconds = random.uniform(60, 70)
+                logger.info(f'已爬取 {self.crawled_note_count} 条笔记，开始随机等待 {wait_seconds:.2f} 秒，防止访问频次异常')
+                time.sleep(wait_seconds)
+                logger.info(f'等待结束，继续爬取')
+            
+            # 爬取当前笔记，支持重试
+            retry_count = 0
+            max_retries = 3
+            while retry_count < max_retries:
+                success, msg, note_info = self.spider_note(note_url, cookies_str, proxies, request_interval)
+                
+                # 检查是否出现访问频次异常
+                if not success and msg and (msg == '访问频次异常，请勿频繁操作或重启试试' or '访问频次异常' in msg):
+                    retry_count += 1
+                    # 计算等待时间，随重试次数增加而延长
+                    wait_seconds = random.uniform(60, 120) * retry_count
+                    logger.warning(f'爬取笔记 {note_url} 出现访问频次异常，开始第 {retry_count}/{max_retries} 次重试，等待 {wait_seconds:.2f} 秒')
+                    time.sleep(wait_seconds)
+                    continue
+                
+                break
+            
             if note_info is not None and success:
                 self.failed_note_count = 0
                 note_list.append(note_info)
@@ -168,7 +198,7 @@ class Data_Spider():
         return note_list
 
 
-    def spider_user_all_note(self, user_url: str, cookies_str: str, base_path: dict, save_choice: str, excel_name: str = '', download: bool = True, proxies=None, request_interval=None, existing_note_ids=None):
+    def spider_user_all_note(self, user_url: str, cookies_str: str, base_path: dict, save_choice: str, excel_name: str = '', download: bool = True, proxies=None, request_interval=None, existing_note_ids=None, retry_note_urls=None):
         """
         爬取一个用户的所有笔记
         :param user_url:
@@ -186,6 +216,35 @@ class Data_Spider():
         self.failed_note_count = 0
         self.retry_round = 0
         self.stop_user_task = False
+        self.crawled_note_count = 0
+
+        if retry_note_urls:
+            try:
+                logger.info(f'开始补爬 {len(retry_note_urls)} 条历史失败笔记')
+                retry_notes = self.spider_some_note(
+                    notes=retry_note_urls,
+                    cookies_str=cookies_str,
+                    base_path=base_path,
+                    save_choice=save_choice,
+                    excel_name=excel_name,
+                    download=download,
+                    proxies=proxies,
+                    request_interval=request_interval,
+                    user_profile=None,
+                    fallback_notes=None
+                )
+                if retry_notes:
+                    detailed_notes.extend(retry_notes)
+
+                for retry_url in retry_note_urls:
+                    try:
+                        note_id = retry_url.split('/explore/')[-1].split('?')[0]
+                        if note_id:
+                            existing_note_ids.add(str(note_id))
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.warning(f'补爬失败笔记时发生错误: {e}')
         try:
             parsed_user_id = user_url.split('/')[-1].split('?')[0]
             success_user, msg_user, user_detail = self.xhs_apis.get_user_info(parsed_user_id, cookies_str, proxies, request_interval)
@@ -307,7 +366,8 @@ class Data_Spider():
 
             save_to_xlsx(detailed_notes, file_path, sheet_name=excel_name, existing_workbook=workbook)
         logger.info(f'爬取用户所有视频 {user_url}: {success}, msg: {msg}')
-        return detailed_notes, api_success, api_msg, user_profile, total_note_count
+        # 返回实际爬取到的新笔记数量，而不是API返回的总笔记数量
+        return detailed_notes, api_success, api_msg, user_profile, len(detailed_notes)
 
     def spider_some_search_note(self, query: str, require_num: int, cookies_str: str, base_path: dict, save_choice: str, sort_type_choice=0, note_type=0, note_time=0, note_range=0, pos_distance=0, geo: dict = None,  excel_name: str = '', download: bool = True, proxies=None, request_interval=None):
         """
